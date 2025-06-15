@@ -28,16 +28,18 @@ document.addEventListener('DOMContentLoaded', () => {
   function showCodeMessage(code) {
     const msg = document.createElement('div');
     msg.className = 'message user';
+
     const pre = document.createElement('pre');
     pre.textContent = code;
+
     msg.appendChild(pre);
     messagesBox.appendChild(msg);
     messagesBox.scrollTop = messagesBox.scrollHeight;
   }
 
-  async function fetchText(url, fallback) {
+  async function fetchText(url, fallback, options = {}) {
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, options);
       if (!res.ok) {
         const errText = await res.text();
         return `Error ${res.status}: ${errText}`;
@@ -117,9 +119,23 @@ document.addEventListener('DOMContentLoaded', () => {
     userInput.value = '';
     userInput.style.height = 'auto';
 
-    const response = await fetch(`/submit_code?topic=${encodeURIComponent(selectedTopic)}&difficulty=${encodeURIComponent(currentDifficulty)}&code=${encodeURIComponent(code)}`);
-    const text = await response.text();
-    showMessage(response.ok ? text : `Error ${response.status}: ${text}`, 'bot');
+    // Отправляем код через POST запрос
+    const responseText = await fetchText(
+      '/submit_code',
+      'Failed to submit code.',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          topic: selectedTopic,
+          difficulty: currentDifficulty,
+          code: code
+        })
+      }
+    );
+    showMessage(responseText, 'bot');
   });
 
   hintBtn.addEventListener('click', async () => {
